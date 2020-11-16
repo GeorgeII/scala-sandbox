@@ -24,15 +24,11 @@ object Utils {
     val headline: String = header.substring(header.indexOf(":") + 2, header.length)
 
     val description: String = doc.select("div.links-blue").first().text()
-    println(description)
 
     val apis = traverseWeekPageAndGetStoryApis(
       new mutable.ListBuffer[String],
       url
     )
-
-    apis.foreach(x => println(x))
-    println(apis.length)
 
     val urls = apis.map(api => "https://blog.reedsy.com" + api)
 
@@ -54,6 +50,8 @@ object Utils {
    * @return StoryModel
    */
   def getStory(url: String): StoryModel = {
+    println(s"Story $url is being processed...")
+
     val doc: Document = Jsoup.connect(url).get()
 
     val author: String = doc.select("div.writing-prompts > section.row-thin > div.content-thin > " +
@@ -88,7 +86,6 @@ object Utils {
   private def traverseWeekPageAndGetStoryApis(apis: mutable.ListBuffer[String], url: String): mutable.ListBuffer[String] = {
     val doc: Document = Jsoup.connect(url).get()
 
-    println(doc.select("div#submissions-load > a").attr("href"))
     val nextPageApi: String = doc.select("div#submissions-load > a").attr("href")
 
     nextPageApi match {
@@ -96,6 +93,7 @@ object Utils {
       case _ =>
         // sleep to not flood the website with requests
         Thread.sleep(500)
+        println("Still reading the Week page...")
         traverseWeekPageAndGetStoryApis(apis ++ extractStoryApis(doc), "https://blog.reedsy.com" + nextPageApi)
     }
   }
@@ -108,11 +106,9 @@ object Utils {
   def extractStoryApis(doc: Document): mutable.ListBuffer[String] = {
     val submissionsContainerElement = doc.getElementById("submissions-container")
     val elements = submissionsContainerElement.select("div.cell-shrink > a")
-    elements.forEach(x => println(x))
 
     val apis = new mutable.ListBuffer[String]
     elements.forEach(x => apis.append(x.attr("href")))
-    println(apis)
 
     apis
   }

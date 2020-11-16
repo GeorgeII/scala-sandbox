@@ -13,4 +13,6 @@ object Application extends App {
 
   Utils.writeWeekInfoToDatabase(weekInfo)
   Utils.writeStoriesToDatabase(stories)
+
+  println(s"Week ${weekInfo.weekNumber} was processed successfully! It contained ${stories.length} stories.")
 }
