@@ -1,6 +1,5 @@
 package com.github.georgeii
 
-import java.io.File
 import java.time.LocalDateTime
 
 import org.jsoup.Jsoup
@@ -16,29 +15,20 @@ import scala.jdk.CollectionConverters._
 
 object Utils {
   def getWeekInfoAndStories(url: String): (WeekInfo, List[StoryModel]) = {
-    //val doc: Document = Jsoup.connect("https://blog.reedsy.com/creative-writing-prompts/contests/67/?page=10").get()
-
-    val input = new File("src/main/scala/com/github/georgeii/67week.html")
-    val doc: Document = Jsoup.parse(input, "UTF-8")
+    val doc: Document = Jsoup.connect(url).get()
 
     val body: Element = doc.select("div.content").get(2)
-    println(body)
 
     val header: String = body.select("h1").get(0).text()
     val weekNumber: Int = header.substring(1, header.indexOf(":")).toInt
     val headline: String = header.substring(header.indexOf(":") + 2, header.length)
-
-    println(header)
-    println(weekNumber)
-    println(headline)
-
 
     val description: String = doc.select("div.links-blue").first().text()
     println(description)
 
     val apis = traverseWeekPageAndGetStoryApis(
       new mutable.ListBuffer[String],
-      "https://blog.reedsy.com/creative-writing-prompts/contests/67/?page=18"
+      url
     )
 
     apis.foreach(x => println(x))
@@ -46,20 +36,14 @@ object Utils {
 
     val urls = apis.map(api => "https://blog.reedsy.com" + api)
 
+    // create an object which has data from the week page.
     val weekInfo = WeekInfo(weekNumber, headline, description, urls, LocalDateTime.now())
 
-    val story: StoryModel = getStory("https://blog.reedsy.com/creative-writing-prompts/contests/67/submissions/41964/")
-    println(story)
-    val story2: StoryModel = getStory("https://blog.reedsy.com/creative-writing-prompts/contests/67/submissions/41964/")
-
+    // process story pages themselves.
     val stories: List[StoryModel] = weekInfo.storiesUrls.map(storyUrl => {
       Thread.sleep(500)
       getStory(storyUrl)
     }).toList
-
-    println(stories)
-    println(stories.getClass.toString)
-    println(stories.length)
 
     (weekInfo, stories)
   }
@@ -90,7 +74,6 @@ object Utils {
       "p > a").eachText().asScala.toList
 
     val body: String = doc.select("article.submission-content > p").eachText().asScala.toList.mkString("\n")
-
 
     StoryModel(name, author, categories, body, likesNumber, commentsNumber, LocalDateTime.now())
   }
@@ -183,7 +166,7 @@ object Utils {
     })
 
     val future = promise.future
-    Await.result(future, Duration(40, java.util.concurrent.TimeUnit.SECONDS))
+    Await.result(future, Duration(120, java.util.concurrent.TimeUnit.SECONDS))
 
     mongoClient.close()
   }
