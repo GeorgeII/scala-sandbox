@@ -1,14 +1,17 @@
 package com.github.georgeii
 
-import java.io.{File, PrintWriter}
+import java.io.File
 import java.time.LocalDateTime
 
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
-import org.jsoup.select.Elements
+import org.mongodb.scala.bson.collection.immutable.{Document => MongoDocument}
+import org.mongodb.scala.{Completed, MongoClient, MongoCollection, MongoDatabase, Observable, Observer}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Promise}
 import scala.jdk.CollectionConverters._
 
 object Utils {
@@ -35,7 +38,7 @@ object Utils {
 
     val apis = traverseWeekPageAndGetStoryApis(
       new mutable.ListBuffer[String],
-      "https://blog.reedsy.com/creative-writing-prompts/contests/67/?page=10"
+      "https://blog.reedsy.com/creative-writing-prompts/contests/67/?page=18"
     )
 
     apis.foreach(x => println(x))
@@ -59,12 +62,6 @@ object Utils {
     println(stories.length)
 
     (weekInfo, stories)
-
-
-    /*val input = new File("src/main/scala/com/github/georgeii/67week.html")
-    val writer = new PrintWriter(input, "UTF-8")
-    writer.write(doc.html)
-    writer.flush*/
   }
 
   /**
@@ -73,10 +70,7 @@ object Utils {
    * @return StoryModel
    */
   def getStory(url: String): StoryModel = {
-    //val doc: Document = Jsoup.connect(url).get()
-
-    val input = new File("src/main/scala/com/github/georgeii/story-example.html")
-    val doc: Document = Jsoup.parse(input, "UTF-8")
+    val doc: Document = Jsoup.connect(url).get()
 
     val author: String = doc.select("div.writing-prompts > section.row-thin > div.content-thin > " +
       "div.panel > div.panel-body > div.grid > div.cell > a > h4").first().text()
@@ -153,5 +147,81 @@ object Utils {
 
     // extracts the number
     numberAndHeadline.substring(1, numberAndHeadline.indexOf(":"))
+  }
+
+  def writeStoriesToDatabase(stories: List[StoryModel]): Unit = {
+    val mongoClient: MongoClient = MongoClient("mongodb://localhost")
+    val database: MongoDatabase = mongoClient.getDatabase("short-story-parser")
+    val collection: MongoCollection[MongoDocument] = database.getCollection("stories")
+
+    val documents = stories.map(x => MongoDocument(
+      "name" -> x.name,
+      "author" -> x.author,
+      "categories" -> x.categories.mkString(", "),
+      "body/story" -> x.body,
+      "likesNumber" -> x.likesNumber,
+      "commentsNumber" -> x.commentsNumber,
+      "timestamp of scraping" -> x.timestamp.toString
+    ))
+
+    val observable: Observable[Completed] = collection.insertMany(documents)
+
+    val promise = Promise[Boolean]
+    observable.subscribe(new Observer[Completed] {
+
+      override def onNext(result: Completed): Unit = println("Inserted")
+
+      override def onError(e: Throwable): Unit = {
+        println("Failed")
+        promise.success(false)
+      }
+
+      override def onComplete(): Unit =  {
+        println("Completed")
+        promise.success(true)
+      }
+    })
+
+    val future = promise.future
+    Await.result(future, Duration(40, java.util.concurrent.TimeUnit.SECONDS))
+
+    mongoClient.close()
+  }
+
+  def writeWeekInfoToDatabase(weekInfo: WeekInfo): Unit = {
+    val mongoClient: MongoClient = MongoClient("mongodb://localhost")
+    val database: MongoDatabase = mongoClient.getDatabase("short-story-parser")
+    val collection: MongoCollection[MongoDocument] = database.getCollection("weeks")
+
+    val document: MongoDocument = MongoDocument(
+      "weekNumber" -> weekInfo.weekNumber,
+      "headline" -> weekInfo.headline,
+      "description" -> weekInfo.description,
+      "storiesUrls" -> weekInfo.storiesUrls.mkString(", "),
+      "timestamp" -> weekInfo.timestamp.toString
+    )
+
+    val observable: Observable[Completed] = collection.insertOne(document)
+
+    val promise = Promise[Boolean]
+    observable.subscribe(new Observer[Completed] {
+
+      override def onNext(result: Completed): Unit = println("Inserted")
+
+      override def onError(e: Throwable): Unit = {
+        println("Failed")
+        promise.success(false)
+      }
+
+      override def onComplete(): Unit =  {
+        println("Completed")
+        promise.success(true)
+      }
+    })
+
+    val future = promise.future
+    Await.result(future, Duration(10, java.util.concurrent.TimeUnit.SECONDS))
+
+    mongoClient.close()
   }
 }
