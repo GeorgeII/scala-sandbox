@@ -5,24 +5,13 @@ import com.github.georgeii
 
 /**
  * ArrayBuffer is a typical resizable array. It can be considered the closest collection to ArrayList in Java.
- *
- * @param elems array of initial elements can be passed into constructor.
  */
-class ArrayBuffer[A: ClassTag](private var elems: Array[A] = null)
+class ArrayBuffer[A: ClassTag]
   extends georgeii.mutable.Buffer[A]
     with georgeii.IndexedSeq[A] {
 
-  // I allowed myself to use null here because it's a totally hidden implementation.
-  var elements: Array[A] = null
+  var elements: Array[A] = new Array[A](5)
   var numberOfElements: Int = 0
-
-  // if nothing was passed in the constructor - create an empty array of length 5
-  if (elems == null) {
-    elements = new Array[A](5)
-  }
-  else {
-    elements = elems.clone()
-  }
 
   /** Adds a new element in the end of a Buffer. */
   override def append(element: A): Unit = insert(numberOfElements, element)
