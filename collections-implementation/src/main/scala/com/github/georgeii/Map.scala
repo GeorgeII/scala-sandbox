@@ -1,5 +1,7 @@
 package com.github.georgeii
 
-trait Map[K, V] extends Iterable[(K, V)] {
-  
+import com.github.georgeii
+
+trait Map[K, V] extends georgeii.Iterable[(K, V)] {
+
 }

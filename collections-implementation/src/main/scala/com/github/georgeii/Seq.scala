@@ -1,10 +1,12 @@
 package com.github.georgeii
 
+import com.github.georgeii
+
 /**
  * Seq must always have a strict order of elements. That means it will always be iterated in a certain order.
  * @tparam A type of its elements.
  */
-trait Seq[A] extends Iterable[A]{
+trait Seq[A] extends georgeii.Iterable[A]{
 
   def length: Int
 

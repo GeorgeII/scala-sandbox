@@ -1,7 +1,9 @@
 package com.github.georgeii
 
-trait Iterable[A] extends Traversable[A] {
+import com.github.georgeii
 
-  def iterator: Iterator[A]
+trait Iterable[A] extends georgeii.Traversable[A] {
+
+  def iterator: georgeii.Iterator[A]
 
 }
