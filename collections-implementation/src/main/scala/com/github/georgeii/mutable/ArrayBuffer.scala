@@ -78,6 +78,15 @@ class ArrayBuffer[A: ClassTag](private var elems: Array[A] = null)
     elements(idx)
   }
 
+  def update(idx: Int, element: A) {
+    if (idx < 0 || idx >= numberOfElements) {
+      throw new ArrayIndexOutOfBoundsException(s"$idx was entered as an index. " +
+        s"The ArrayBuffer contains only $numberOfElements elements.")
+    }
+
+    elements(idx) = element
+  }
+
   override def length: Int = numberOfElements
 
   /** Implement method from Iterable */
