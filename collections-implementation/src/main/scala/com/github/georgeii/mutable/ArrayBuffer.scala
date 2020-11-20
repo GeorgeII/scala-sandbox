@@ -52,8 +52,8 @@ class ArrayBuffer[A: ClassTag]
     }
 
     val tempArray = new Array[A](numberOfElements - idx)
-    Array.copy(elements, idx, tempArray, 0, tempArray.length)
-    Array.copy(tempArray, 0, elements, idx, tempArray.length)
+    Array.copy(elements, idx + 1, tempArray, 0, tempArray.length - 1)
+    Array.copy(tempArray, 0, elements, idx, tempArray.length - 1)
 
     numberOfElements -= 1
   }
@@ -84,7 +84,7 @@ class ArrayBuffer[A: ClassTag]
 
       private var iteratorIndex = -1
 
-      override def hasNext: Boolean = {iteratorIndex + 1 > numberOfElements}
+      override def hasNext: Boolean = {iteratorIndex + 1 < numberOfElements}
 
       override def next(): A = {
         iteratorIndex += 1
