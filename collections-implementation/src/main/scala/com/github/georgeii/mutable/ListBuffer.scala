@@ -101,6 +101,7 @@ class ListBuffer[A: ClassTag]
       val newHead = head.get.next
       head.get.next = None
       head = newHead
+      numberOfNodes -= 1
       return
     }
 
