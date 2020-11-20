@@ -10,8 +10,8 @@ class ArrayBuffer[A: ClassTag]
   extends georgeii.mutable.Buffer[A]
     with georgeii.IndexedSeq[A] {
 
-  var elements: Array[A] = new Array[A](5)
-  var numberOfElements: Int = 0
+  private var elements: Array[A] = new Array[A](5)
+  private var numberOfElements: Int = 0
 
   /** Adds a new element in the end of a Buffer. */
   override def append(element: A): Unit = insert(numberOfElements, element)
@@ -82,7 +82,7 @@ class ArrayBuffer[A: ClassTag]
   override def iterator: georgeii.Iterator[A] = {
     new georgeii.Iterator[A] {
 
-      private[this] var iteratorIndex = -1
+      private var iteratorIndex = -1
 
       override def hasNext: Boolean = {iteratorIndex + 1 > numberOfElements}
 
