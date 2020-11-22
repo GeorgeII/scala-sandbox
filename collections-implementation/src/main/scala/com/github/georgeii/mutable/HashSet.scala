@@ -18,7 +18,6 @@ class HashSet[A: ClassTag]
 
   // it's a little bit better to have hashtable size multiple of 2 (as we divide hashcodes by hashtable length).
   private var hashtable = Array.ofDim[scala.collection.mutable.ListBuffer[A]](32)
-
   private var numberOfElements = 0
 
   /** Adds a new element to the set. */
@@ -51,7 +50,7 @@ class HashSet[A: ClassTag]
    */
   private def expandHashTable(): Unit = {
     /* !!! TODO: check if it's possible without ClassTag !!!  Answer: It's possible. That means types are substituted
-            to generic parameters during an initialization of an object. */
+            to generic parameters during the initialization of the object. */
     val newHashTable = new HashSet[A]()
     newHashTable.initialSize(2 * hashtable.length)
 
@@ -71,6 +70,33 @@ class HashSet[A: ClassTag]
 
   private def getDeepCopyOfHashTable: Array[scala.collection.mutable.ListBuffer[A]] = {
     hashtable.clone
+  }
+
+  def -=(element: A): Unit = {
+    // shrink hashtable when there are 0.5*x elements, where x is the length of the hashtable.
+    if ( 2 * numberOfElements <= hashtable.length && hashtable.length > 128) {
+      shrinkHashTable()
+    }
+
+    if (!this.contains(element))
+      return
+
+    val index = element.hashCode.abs % hashtable.length
+    val bucket = hashtable(index)
+
+    bucket -= element
+    numberOfElements -= 1
+  }
+
+  private def shrinkHashTable(): Unit = {
+    val newHashTable = new HashSet[A]()
+    newHashTable.initialSize(hashtable.length / 2)
+
+    // put every element to the new hashtable.
+    this.foreach(elem => newHashTable += elem)
+
+    // make a deep copy of the new hash table.
+    hashtable = newHashTable.getDeepCopyOfHashTable
   }
 
   def contains(element: A): Boolean = {
