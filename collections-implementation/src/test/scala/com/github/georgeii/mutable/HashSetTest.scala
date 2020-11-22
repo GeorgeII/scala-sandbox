@@ -13,8 +13,8 @@ class HashSetTest extends AnyFlatSpec {
     assert(set.size == 0)
   }
 
-  it should "add elements and implement resizable hashtable, i.e. rebuild a hashtable for a larger one when there's " +
-    "too many elements" in {
+  it should "add elements and implement resizable hashtable, i.e. rebuild a hashtable to a larger one when there's " +
+    "too many elements in" in {
     val set = new HashSet[Int]()
     set += 1
     set += 2
@@ -57,5 +57,44 @@ class HashSetTest extends AnyFlatSpec {
     set += "Three"
     set += "Two"
     assert(set.size == 3)
+  }
+
+  it should "contain all elements after expanding the hashtable" in {
+    val set = new HashSet[String]()
+    for(i <- 5 to 1100) {
+      set += i + "asdf"
+    }
+
+    assert(set.contains("556asdf"))
+  }
+
+  it should "remove elements" in {
+    val set = new HashSet[String]()
+    set += "One"
+    set += "Two"
+    set += "Three"
+    set -= "One"
+
+    assert(set.size == 2)
+    assert(set.contains("Two"))
+    assert(set.contains("Three"))
+    assert(!set.contains("One"))
+  }
+
+  it should "recalculate hashtables while shrinking" in {
+    val set = new HashSet[String]()
+
+    for(i <- 5 to 2000) {
+      set += i + "asdf"
+    }
+
+    for(i <- 5 to 1900) {
+      set -= i + "asdf"
+    }
+
+    assert(set.size == 100)
+    assert(set.contains("1954asdf"))
+    assert(set.contains("2000asdf"))
+    assert(!set.contains("999asdf"))
   }
 }
