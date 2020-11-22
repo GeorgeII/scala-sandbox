@@ -50,12 +50,13 @@ class HashSet[A: ClassTag]
    * Recalculates the whole hashtable so its elements can be moved to another bucket number in the new hashtable.
    */
   private def expandHashTable(): Unit = {
-    // !!! TODO: check if it's possible without ClassTag !!!
+    /* !!! TODO: check if it's possible without ClassTag !!!  Answer: It's possible. That means types are substituted
+            to generic parameters during an initialization of an object. */
     val newHashTable = new HashSet[A]()
     newHashTable.initialSize(2 * hashtable.length)
 
     // put every element to the new hashtable.
-    this.foreach(x => newHashTable += x)
+    this.foreach(elem => newHashTable += elem)
 
     // make a deep copy of the new hash table.
     hashtable = newHashTable.getDeepCopyOfHashTable
@@ -95,23 +96,23 @@ class HashSet[A: ClassTag]
       override def hasNext: Boolean = iteratorIndex < numberOfElements
 
       override def next(): A = {
-        var bucket = new scala.collection.mutable.ListBuffer[A]
+        var bucket = new scala.collection.mutable.ListBuffer[A]()
 
         breakable {
           for (i <- hashtableIndex until hashtable.length) {
+            hashtableIndex = i
             bucket = hashtable(hashtableIndex)
 
-            if (bucket != null && bucket.nonEmpty && elementsPassedInConcreteBucket < bucket.length) {
+            if (bucket != null && bucket.nonEmpty && elementsPassedInConcreteBucket < bucket.length)
               break
-            }
-
-            hashtableIndex = i
+            
             elementsPassedInConcreteBucket = 0
           }
         }
 
         val element = bucket(elementsPassedInConcreteBucket)
         elementsPassedInConcreteBucket += 1
+        iteratorIndex += 1
 
         element
       }
