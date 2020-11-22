@@ -28,7 +28,7 @@ class HashSet[A: ClassTag]
       expandHashTable()
     }
 
-    val index = element.hashCode % hashtable.length
+    val index = element.hashCode.abs % hashtable.length
 
     // if the bucket has not been initialized yet.
     if (hashtable(index) == null) {
@@ -70,11 +70,11 @@ class HashSet[A: ClassTag]
   }
 
   private def getDeepCopyOfHashTable: Array[scala.collection.mutable.ListBuffer[A]] = {
-    hashtable.clone.map(_.clone)
+    hashtable.clone
   }
 
   def contains(element: A): Boolean = {
-    val index = element.hashCode % hashtable.length
+    val index = element.hashCode.abs % hashtable.length
     val bucket = hashtable(index)
 
     if (bucket == null)
@@ -105,7 +105,7 @@ class HashSet[A: ClassTag]
 
             if (bucket != null && bucket.nonEmpty && elementsPassedInConcreteBucket < bucket.length)
               break
-            
+
             elementsPassedInConcreteBucket = 0
           }
         }
