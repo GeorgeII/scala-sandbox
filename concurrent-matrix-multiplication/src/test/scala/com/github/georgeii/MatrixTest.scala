@@ -77,4 +77,23 @@ class MatrixTest extends AnyFlatSpec {
     }
   }
 
+  it should "run with one Future" in {
+    val matrix1 = Matrix(Vector(Vector(1, 2, 3), Vector(4, 5, 6), Vector(7, 8, 9)))
+    val matrix2 = Matrix(Vector(Vector(1, 2, 3), Vector(4, 5, 6), Vector(7, 8, 9)))
+    val result1 = matrix1.multiplyConcurrently(matrix2)
+    assert(result1 == Matrix(Vector(Vector(30.0, 36.0, 42.0), Vector(66.0, 81.0, 96.0), Vector(102.0, 126.0, 150.0))))
+  }
+
+
+
+
+
+
+  "multiplyRowByColumn" should "return a scalar multiplication of two vectors" in {
+    val vec1 = Vector(1, 2, 3)
+    val vec2 = Vector(4, 5, 6)
+    val res1 = Matrix.multiplyRowByColumn(vec1, vec2)
+
+    assert(res1 == 32.0)
+  }
 }
