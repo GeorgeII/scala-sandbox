@@ -77,17 +77,21 @@ class MatrixTest extends AnyFlatSpec {
     }
   }
 
-  it should "run with one Future" in {
+  it should "run with Futures" in {
     val matrix1 = Matrix(Vector(Vector(1, 2, 3), Vector(4, 5, 6), Vector(7, 8, 9)))
     val matrix2 = Matrix(Vector(Vector(1, 2, 3), Vector(4, 5, 6), Vector(7, 8, 9)))
     val result1 = matrix1.multiplyConcurrently(matrix2)
     assert(result1 == Matrix(Vector(Vector(30.0, 36.0, 42.0), Vector(66.0, 81.0, 96.0), Vector(102.0, 126.0, 150.0))))
+
+    val matrix3 = Matrix(Vector(Vector(1.0, 2, 3), Vector(4.0, 5, 6), Vector(7.0, 8, 9), Vector(10.0, 11, 12)))
+    val matrix4 = Matrix(Vector(Vector(4.0, 5, 7, 8), Vector(15.0, 14, 13, 12), Vector(1.0, 2, 3, 4)))
+    val result2 = matrix3.multiplyConcurrently(matrix4)
+    assert(result2 == Matrix(
+        Vector(Vector(37.0, 39.0, 42.0, 44.0), Vector(97.0, 102.0, 111.0, 116.0),
+        Vector(157.0, 165.0, 180.0, 188.0), Vector(217.0, 228.0, 249.0, 260.0))
+      )
+    )
   }
-
-
-
-
-
 
   "multiplyRowByColumn" should "return a scalar multiplication of two vectors" in {
     val vec1 = Vector(1, 2, 3)
@@ -95,5 +99,10 @@ class MatrixTest extends AnyFlatSpec {
     val res1 = Matrix.multiplyRowByColumn(vec1, vec2)
 
     assert(res1 == 32.0)
+  }
+
+  "createRandomMatrixOfDoubles" should "return a matrix of random double values of a given shape" in {
+    println(Matrix.createRandomMatrixOfDoubles(3, 3))
+    println(Matrix.createRandomMatrixOfDoubles(4, 3))
   }
 }
