@@ -105,4 +105,52 @@ class MatrixTest extends AnyFlatSpec {
     println(Matrix.createRandomMatrixOfDoubles(3, 3))
     println(Matrix.createRandomMatrixOfDoubles(4, 3))
   }
+
+  "Matrix" should "return the same result matrix for the simple multiplication and for the concurrent multiplication" in {
+    val matrix1 = Matrix.createRandomMatrixOfDoubles(12, 14)
+    val matrix2 = Matrix.createRandomMatrixOfDoubles(14, 9)
+    val sequentialMultiplication = matrix1 * matrix2
+    val concurrentMultiplication = matrix1.multiplyConcurrently(matrix2)
+    assert(sequentialMultiplication == concurrentMultiplication)
+
+    val matrix3 = Matrix.createRandomMatrixOfDoubles(23, 21)
+    val matrix4 = Matrix.createRandomMatrixOfDoubles(21, 32)
+    val sequentialMultiplication2 = matrix3 * matrix4
+    val concurrentMultiplication2 = matrix3.multiplyConcurrently(matrix4)
+    assert(sequentialMultiplication2 == concurrentMultiplication2)
+  }
+
+  "concurrentMultiply" should "be faster than sequential multiplication with large matrices" in {
+    for (i <- 20 to 1000 by 50) {
+
+      val matrix1 = Matrix.createRandomMatrixOfDoubles(i, i)
+      val matrix2 = Matrix.createRandomMatrixOfDoubles(i, i)
+      val sequentialMultiplication = time {
+        matrix1 * matrix2
+      }
+      val concurrentMultiplication = time {
+        matrix1.multiplyConcurrently(matrix2)
+      }
+
+      println(s"$i by $i matrices multiplication: ")
+      println(s"Sequential multiplication: ${sequentialMultiplication._2 / 1000000000.0} s")
+      println(s"Concurrent multiplication: ${concurrentMultiplication._2 / 1000000000.0} s")
+      println("------------------------\n")
+
+      assert(sequentialMultiplication._1 == concurrentMultiplication._1)
+    }
+  }
+
+  /**
+   * Allows to roughly measure time of execution of a code-block.
+   * @param block block of code, method, etc.
+   * @return tuple of result of the code-block and its execution time
+   */
+  private def time[R](block: => R): (R, Long) = {
+    val t0 = System.nanoTime()
+    val result = block
+    val t1 = System.nanoTime()
+    val executionTime = t1 - t0
+    (result, executionTime)
+  }
 }
