@@ -1,50 +1,98 @@
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 import scala.io.Source
-import scala.util.{Failure, Success}
 
-object WordLengthCounter extends App {
-  val numberOfFutures = 10
+object WordLengthCounter{
 
-  val source = Source.fromURL("https://raw.githubusercontent.com/benschw/shakespeare-txt/master/shakespeare-hamlet-25.txt")
-  val text = source.mkString
-    //.replaceAll("""[,\s]+(|.*[^,\s])[,\s]+""", " ")
-    .replaceAll("""[\p{Punct}&&[^']]|[\s]""", " ")
-    .split(" ")
-    //.filterNot(_.isBlank)
-    //.map(_.trim)
-    .toList
+  def main(args: Array[String]): Unit = {
+    val numberOfFutures = 6
 
-  text.foreach(println)
-  println(text.length)
+    // calculate every method N times and show the result of the last one. So, JVM becomes warmed up.
+    val numberOfTests = 50
 
-  // to create numberOfFutures Futures we need to calculate sliding-function parameters
-  val sublistSize = (text.length.toDouble / numberOfFutures).ceil.toInt
+    val source = Source.fromURL("https://raw.githubusercontent.com/benschw/shakespeare-txt/master/shakespeare-hamlet-25.txt")
 
-  println(sublistSize)
+    // remove all punctuation marks except for ' and make list of words.
+    val text = source.mkString
+      .replaceAll("""[\p{Punct}&&[^']]|[\s]""", " ")
+      .split(" ")
+      .toList
+    
+    println(s"Number of words (including empty lines): ${text.length} \n")
 
-  val splitInLists = text.sliding(sublistSize, sublistSize).toVector
+    // in order to create some threads in threadpool before our main task
+    val warmingUpExecutionContext = for{
+      i <- 0 to numberOfFutures
+    } yield Future {
+      // Let our futures do some work. + i prevents from putting in the string pool
+      "warm-up" * (100 + i)
+    }
+    warmingUpExecutionContext.map(Await.result(_, Duration.Inf))
 
-  splitInLists.foreach(x => println(x.length))
-  println(splitInLists.length)
 
-  def processWords(words: Seq[String]): Future[Double] = Future {
+    // solving the task.
+
+    var futuresRes: (Double, Long) = (0, 0)
+    for {
+      _ <- 0 to numberOfTests
+    } futuresRes = time {
+      // this block contains the inner logic of splitting/calculating/counting with Futures.
+
+      // to create numberOfFutures Futures we need to calculate sliding-function parameters first
+      val sublistSize = (text.length.toDouble / numberOfFutures).ceil.toInt
+
+      val splitInLists = text.sliding(sublistSize, sublistSize).toVector
+
+      val futures = for {
+        sublist <- splitInLists
+      } yield Future(findAverage(sublist))
+
+      val (accumulatedLength, numberOfWords) = futures.map(Await.result(_, Duration.Inf))
+        .foldLeft((0.0, 0)) {
+          case ((accTotalLength, accWordsQuantity), (x, y)) => (accTotalLength + x, accWordsQuantity + y)
+        }
+
+      val futuresResult = accumulatedLength / numberOfWords
+
+      futuresResult
+    }
+
+    var straightforwardRes: (Double, Long) = (0, 0)
+    for {
+      _ <- 0 to numberOfTests
+    } straightforwardRes = time {
+      val (totalLength, totalWords) = findAverage(text)
+      totalLength / totalWords
+    }
+
+    println(s"         Method          |      Result       |       Time")
+    println(s"Futures                  | ${futuresRes._1} | ${futuresRes._2 / 1000000000.0} s")
+    println(s"Straightforward approach | ${straightforwardRes._1} | ${straightforwardRes._2 / 1000000000.0} s")
+  }
+
+
+  /**
+   * Returns accumulated words length and number of words.
+   */
+  def findAverage(words: Seq[String]): (Double, Int) = {
+    // remove empty strings; make "John's" -> "Johns"; trim whitespaces on both sides " Hamlet   "  -> "Hamlet".
     val filtered = words
       .map(_.replaceAll("\'", ""))
       .filterNot(_.isBlank)
       .map(_.trim)
 
-    filtered.map(_.length).sum.toDouble / filtered.length
+    (filtered.map(_.length).sum.toDouble, filtered.length)
   }
 
-  val futures = for{
-    sublist <- splitInLists
-  } yield processWords(sublist)
-
-  //val processedFutures = futures.map(_.map(_))
-  val result = futures
-    .foldLeft(0)((acc, f) => f.onComplete {
-      case Success(value) => value + acc
-      case _ =>.0
-    })
+  /**
+   * Returns the result of a code block passed into this function and its execution time.
+   */
+  def time[R](block: => R): (R, Long) = {
+    val t0 = System.nanoTime()
+    val result = block
+    val t1 = System.nanoTime()
+    val executionTime = t1 - t0
+    (result, executionTime)
+  }
 }
