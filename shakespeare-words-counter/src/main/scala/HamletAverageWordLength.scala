@@ -1,9 +1,9 @@
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
 import scala.io.Source
 
-object WordLengthCounter{
+object HamletAverageWordLength{
 
   def main(args: Array[String]): Unit = {
     val numberOfFutures = 6
@@ -28,7 +28,7 @@ object WordLengthCounter{
       // Let our futures do some work. + i prevents from putting in the string pool
       "warm-up" * (100 + i)
     }
-    warmingUpExecutionContext.map(Await.result(_, Duration.Inf))
+    warmingUpExecutionContext.map(Await.result(_, 3.second))
 
 
     // solving the task.
@@ -48,7 +48,7 @@ object WordLengthCounter{
         sublist <- splitInLists
       } yield Future(findAverage(sublist))
 
-      val (accumulatedLength, numberOfWords) = futures.map(Await.result(_, Duration.Inf))
+      val (accumulatedLength, numberOfWords) = futures.map(Await.result(_, 3.second))
         .foldLeft((0.0, 0)) {
           case ((accTotalLength, accWordsQuantity), (x, y)) => (accTotalLength + x, accWordsQuantity + y)
         }
