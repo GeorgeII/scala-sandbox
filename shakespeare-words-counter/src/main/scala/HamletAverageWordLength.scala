@@ -1,98 +1,81 @@
-import scala.concurrent.ExecutionContext.Implicits.global
+import java.util.concurrent.ForkJoinPool
+import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.io.Source
 
 object HamletAverageWordLength{
 
   def main(args: Array[String]): Unit = {
-    val numberOfFutures = 6
-
-    // calculate every method N times and show the result of the last one. So, JVM becomes warmed up.
-    val numberOfTests = 50
+    val numberOfFutures = Runtime.getRuntime.availableProcessors()
+    implicit val ec: ExecutionContext = ExecutionContext.fromExecutorService(new ForkJoinPool(numberOfFutures))
 
     val source = Source.fromURL("https://raw.githubusercontent.com/benschw/shakespeare-txt/master/shakespeare-hamlet-25.txt")
 
-    // remove all punctuation marks except for ' and make list of words.
+    // remove all punctuation marks except for ' and make a vector of words.
     val text = source.mkString
       .replaceAll("""[\p{Punct}&&[^']]|[\s]""", " ")
       .split(" ")
-      .toList
+      .toVector
+
+    source.close()
     
     println(s"Number of words (including empty lines): ${text.length} \n")
 
-    // in order to create some threads in threadpool before our main task
-    val warmingUpExecutionContext = for{
-      i <- 0 to numberOfFutures
-    } yield Future {
-      // Let our futures do some work. + i prevents from putting in the string pool
-      "warm-up" * (100 + i)
-    }
-    warmingUpExecutionContext.map(Await.result(_, 3.second))
+    // to create numberOfFutures Futures we need to calculate sliding-function parameters first
+    val sublistSize = text.length / numberOfFutures + 1
+    val splitInLists = text.sliding(sublistSize, sublistSize).toVector
+
+//    val cleanEachWord = (words: Vector[String]) => {
+//      words
+//        .map(_.replaceAll("\'", ""))
+//        .filterNot(_.isBlank)
+//        .map(_.trim)
+//    }
+//    val sumLengthLength = (words: Vector[String]) => (words.map(_.length).sum, words.length)
+//    val cleanEachWordAndThenSumLengthLength = cleanEachWord andThen sumLengthLength
+
+    val futures = for {
+      sublist <- splitInLists
+    } yield Future(cleanEachWordAndThenSumLengthLength(sublist))
+
+    val futureSequence = Future.sequence(futures)
+
+    // the only Await in the entire program.
+    val unwrappedSequence = Await.result(futureSequence, 3.seconds)
+
+    val (accumulatedLength, numberOfWords) = unwrappedSequence.foldLeft((0.0, 0L)) {
+        case ((accTotalLength, accWordsQuantity), (x, y)) => (accTotalLength + x, accWordsQuantity + y)
+      }
+    val futuresResult = accumulatedLength / numberOfWords
 
 
-    // solving the task.
+    val (totalLength, totalWords) = cleanEachWordAndThenSumLengthLength(text)
+    val straightforwardRes = totalLength.toDouble / totalWords
 
-    var futuresRes: (Double, Long) = (0, 0)
-    for {
-      _ <- 0 to numberOfTests
-    } futuresRes = time {
-      // this block contains the inner logic of splitting/calculating/counting with Futures.
-
-      // to create numberOfFutures Futures we need to calculate sliding-function parameters first
-      val sublistSize = (text.length.toDouble / numberOfFutures).ceil.toInt
-
-      val splitInLists = text.sliding(sublistSize, sublistSize).toVector
-
-      val futures = for {
-        sublist <- splitInLists
-      } yield Future(findAverage(sublist))
-
-      val (accumulatedLength, numberOfWords) = futures.map(Await.result(_, 3.second))
-        .foldLeft((0.0, 0)) {
-          case ((accTotalLength, accWordsQuantity), (x, y)) => (accTotalLength + x, accWordsQuantity + y)
-        }
-
-      val futuresResult = accumulatedLength / numberOfWords
-
-      futuresResult
-    }
-
-    var straightforwardRes: (Double, Long) = (0, 0)
-    for {
-      _ <- 0 to numberOfTests
-    } straightforwardRes = time {
-      val (totalLength, totalWords) = findAverage(text)
-      totalLength / totalWords
-    }
-
-    println(s"         Method          |      Result       |       Time")
-    println(s"Futures                  | ${futuresRes._1} | ${futuresRes._2 / 1000000000.0} s")
-    println(s"Straightforward approach | ${straightforwardRes._1} | ${straightforwardRes._2 / 1000000000.0} s")
+    println(s"Futures result: $futuresResult")
+    println(s"Straightforward result: $straightforwardRes")
   }
 
 
   /**
    * Returns accumulated words length and number of words.
    */
-  def findAverage(words: Seq[String]): (Double, Int) = {
-    // remove empty strings; make "John's" -> "Johns"; trim whitespaces on both sides " Hamlet   "  -> "Hamlet".
-    val filtered = words
-      .map(_.replaceAll("\'", ""))
-      .filterNot(_.isBlank)
-      .map(_.trim)
-
-    (filtered.map(_.length).sum.toDouble, filtered.length)
+  def cleanEachWordAndThenSumLengthLength: Vector[String] => (Long, Long) = {
+    cleanEachWord andThen sumLengthLength
   }
 
   /**
-   * Returns the result of a code block passed into this function and its execution time.
+   *  removes empty strings; make "John's" -> "Johns"; trim whitespaces on both sides " Hamlet   "  -> "Hamlet".
    */
-  def time[R](block: => R): (R, Long) = {
-    val t0 = System.nanoTime()
-    val result = block
-    val t1 = System.nanoTime()
-    val executionTime = t1 - t0
-    (result, executionTime)
+  def cleanEachWord: Vector[String] => Vector[String] = { words =>
+    words
+      .map(_.replaceAll("\'", ""))
+      .filterNot(_.isBlank)
+      .map(_.trim)
+  }
+
+  def sumLengthLength: Vector[String] => (Long, Long) = { words =>
+    (words.map(_.length).sum, words.length)
   }
 }
