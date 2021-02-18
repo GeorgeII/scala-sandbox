@@ -7,6 +7,28 @@ import scala.io.StdIn.readLine
 
 object Grep {
 
+  def printStringsThatContainWord(strings: Vector[String], wordToFind: String): Unit = {
+    for {
+      string <- strings if string.contains(wordToFind)
+    } println(string)
+  }
+
+  /**
+   * I decided not to split it into 2 functions because that would double the number of if statements.
+   * @return Empty String if the last character was '\n' or passed string otherwise.
+   */
+  def accumulateAndPrintLastString(lastCharInChunk: Byte, string: String, wordToFind: String): String = {
+    if (lastCharInChunk == '\n') {
+      printStringsThatContainWord(Vector(string), wordToFind)
+
+      // means we don't need to accumulate and returns an empty string.
+      ""
+    }
+    else {
+      string
+    }
+  }
+
   def main(args: Array[String]): Unit = {
 
     println("Enter a word to find:")
@@ -40,26 +62,16 @@ object Grep {
         // file in the following chunk-order: '... this is my com' and 'puter\nAnd this is ...'. To print the entire line
         // we have to get the beginning of a string from the previous chunk and concatenate it with its continuation
         // in the next chunk.
-        val firstString = previousString + strings(0)
-        val lastString = strings(strings.length - 1)
+        val firstString = previousString + strings.head
+        val lastString = strings.last
 
         val preparedStringsToFindWord = firstString +: strings.slice(1, strings.length - 1)
 
-        for {
-          string <- preparedStringsToFindWord if string.contains(wordToFind)
-        } println(string)
+        printStringsThatContainWord(preparedStringsToFindWord, wordToFind)
 
         // another corner case but for the last string in a chunk. If the string does not end with the '\n', we have to
         // concatenate it with the first string during the next step of 'fold'.
-        var stringToPassToNextIteration = ""
-
-        if (inputChunk(inputChunk.length - 1) == '\n') {
-          if (lastString.contains(wordToFind))
-            println(lastString)
-        }
-        else {
-          stringToPassToNextIteration = lastString
-        }
+        val stringToPassToNextIteration = accumulateAndPrintLastString(inputChunk.last, lastString, wordToFind)
 
         stringToPassToNextIteration
     }
