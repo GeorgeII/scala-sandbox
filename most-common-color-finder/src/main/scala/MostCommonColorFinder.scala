@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext
 
 object MostCommonColorFinder {
 
-  type RGBPixel = (Int, Int, Int)
+  case class RGBPixel(red: Int, green: Int, blue: Int)
 
   def processFilesPerThread(files: Vector[File]): IO[Vector[RGBPixel]] = {
     files.map(file => getMostFrequentPixelInImage(file)).sequence
@@ -56,7 +56,7 @@ object MostCommonColorFinder {
     val green = (color & 0xff00) / 256
     val blue = (color & 0xff)
 
-    (red, green, blue)
+    RGBPixel(red, green, blue)
   }
 
   /**
@@ -73,8 +73,7 @@ object MostCommonColorFinder {
     for (x <- 0 until width by pixelsOfStripePerSample)
       for (y <- 0 until height) {
         val idx = x / pixelsOfStripePerSample
-        val (red, green ,blue) = (pixels(idx)._1, pixels(idx)._2, pixels(idx)._3)
-        val color = (red * 65536) + (green * 256) + blue
+        val color = pixels(idx).red * 65536 + pixels(idx).green * 256 + pixels(idx).blue
 
         for (i <- 0 until pixelsOfStripePerSample)
           outputImage.setRGB(x + i, y, color)
