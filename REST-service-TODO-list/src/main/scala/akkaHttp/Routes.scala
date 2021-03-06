@@ -4,7 +4,6 @@ import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
-import akka.http.scaladsl.server.Directives._
 import akka.util.Timeout
 import akkaHttp.TodoRegistry.{ActionPerformed, CreateTodoTask, GetTodoTasks, RemoveTodoTask}
 import akka.http.scaladsl.server.Directives._
@@ -54,11 +53,9 @@ class Routes(tasksRegistry: ActorRef[TodoRegistry.Command])(implicit val system:
         }
       },
 
-      (path("api" / "tasks") & delete) {
-        entity(as[String]) { taskName =>
-          onSuccess(removeTask(taskName)) { performed =>
-            complete(StatusCodes.OK, performed)
-          }
+      (path("api" / "tasks" / Segment) & delete) { taskName =>
+        onSuccess(removeTask(taskName)) { performed =>
+          complete(StatusCodes.OK, performed)
         }
       }
     )
