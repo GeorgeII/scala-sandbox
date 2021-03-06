@@ -3,41 +3,40 @@ package akkaHttp
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
-// unmarshalling and marshalling
-trait TaskJsonProtocol extends DefaultJsonProtocol {
-  implicit val taskFormat: RootJsonFormat[Task] = jsonFormat2(Task)
-}
+import scala.util.{Failure, Success}
 
-object Server extends TaskJsonProtocol with SprayJsonSupport {
+object Server {
 
-  implicit val actorSystem = ActorSystem(Behaviors.empty, "AkkaHttpSystem")
+  private def startHttpServer(routes: Route)(implicit system: ActorSystem[_]): Unit = {
 
-  val routes: Route = {
-    concat(
-      (path("") & get) {
-        complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "<h1>The server is up! Now add tasks to /api/tasks via " +
-          "POST and check them out via GET</h1>"))
-      },
+    import system.executionContext
 
-      (path("api" / "tasks") & get) {
-        complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "<h1>TODO: add TODO list ;)</h1>"))
-      },
+    val futureBinding = Http().newServerAt("localhost", 8080).bind(routes)
 
-      (path("api" / "tasks") & post) {
-        entity(as[Task]) { task =>
-          complete(Task("5", 10))
-        }
-      }
-    )
+    futureBinding.onComplete {
+      case Success(binding) =>
+        val address = binding.localAddress
+        system.log.info("Server online at http://{}:{}/", address.getHostString, address.getPort)
+      case Failure(ex) =>
+        system.log.error("Failed to bind HTTP endpoint, terminating system", ex)
+        system.terminate()
+    }
   }
 
   def main(args: Array[String]): Unit = {
-    Http().newServerAt("localhost", 8080).bind(routes)
+
+    val rootBehavior = Behaviors.setup[Nothing] { context =>
+      val registryActor = context.spawn(TodoRegistry(), "registryActor")
+      context.watch(registryActor)
+
+      val routes = new Routes(registryActor)(context.system)
+      startHttpServer(routes.routes)(context.system)
+
+      Behaviors.empty
+    }
+
+    val system = ActorSystem[Nothing](rootBehavior, "TodoServer")
   }
 }
