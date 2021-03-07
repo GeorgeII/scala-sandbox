@@ -8,9 +8,7 @@ import scala.io.StdIn.readLine
 object Grep {
 
   def printStringsThatContainWord(strings: Vector[String], wordToFind: String): Unit = {
-    for {
-      string <- strings if string.contains(wordToFind)
-    } println(string)
+    strings.filter(_.contains(wordToFind)).foreach(println)
   }
 
   /**
@@ -31,10 +29,8 @@ object Grep {
 
   def main(args: Array[String]): Unit = {
 
-    println("Enter a word to find:")
-    val wordToFind = readLine()
-    println("Enter filename:")
-    val filename = readLine()
+    val wordToFind = args(0)
+    val filename = args(1)
 
     implicit val system: ActorSystem = ActorSystem("QuickStart")
     import system.dispatcher
