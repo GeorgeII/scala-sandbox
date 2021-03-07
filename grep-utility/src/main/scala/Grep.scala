@@ -7,24 +7,9 @@ import scala.io.StdIn.readLine
 
 object Grep {
 
-  def printStringsThatContainWord(strings: Vector[String], wordToFind: String): Unit = {
-    strings.filter(_.contains(wordToFind)).foreach(println)
-  }
-
-  /**
-   * I decided not to split it into 2 functions because that would double the number of if statements.
-   * @return Empty String if the last character was '\n' or passed string otherwise.
-   */
-  def accumulateAndPrintLastString(lastCharInChunk: Byte, string: String, wordToFind: String): String = {
-    if (lastCharInChunk == '\n') {
-      printStringsThatContainWord(Vector(string), wordToFind)
-
-      // means we don't need to accumulate and returns an empty string.
-      ""
-    }
-    else {
-      string
-    }
+  def printLastStringIfContains(lastCharInChunk: Byte, string: String, wordToFind: String): Unit = {
+    if (lastCharInChunk == '\n' && string.contains(wordToFind))
+      println(string)
   }
 
   def main(args: Array[String]): Unit = {
@@ -63,11 +48,12 @@ object Grep {
 
         val preparedStringsToFindWord = firstString +: strings.slice(1, strings.length - 1)
 
-        printStringsThatContainWord(preparedStringsToFindWord, wordToFind)
+        preparedStringsToFindWord.filter(_.contains(wordToFind)).foreach(println)
 
         // another corner case but for the last string in a chunk. If the string does not end with the '\n', we have to
         // concatenate it with the first string during the next step of 'fold'.
-        val stringToPassToNextIteration = accumulateAndPrintLastString(inputChunk.last, lastString, wordToFind)
+        val stringToPassToNextIteration = if (inputChunk.last == '\n') "" else lastString
+        printLastStringIfContains(inputChunk.last, lastString, wordToFind)
 
         stringToPassToNextIteration
     }
