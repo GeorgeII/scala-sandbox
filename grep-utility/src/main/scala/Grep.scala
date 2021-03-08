@@ -12,11 +12,13 @@ object Grep {
 
     val source = StreamConverters.fromInputStream(() => System.in)
 
+    val jvmHeapMaxMemory = Runtime.getRuntime.maxMemory()
+
     // Splits by '\n'; converts every line from bytes to string; filter strings.
     val flow = Framing
       .delimiter(
         delimiter = ByteString(System.lineSeparator()),
-        maximumFrameLength = Int.MaxValue,
+        maximumFrameLength = (jvmHeapMaxMemory * 0.8).toInt,
         allowTruncation = true
       )
       .map(_.utf8String)
