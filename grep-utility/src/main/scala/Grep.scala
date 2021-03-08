@@ -2,64 +2,33 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl._
 import akka.util.ByteString
 
-import java.nio.file.Paths
-import scala.io.StdIn.readLine
-
 object Grep {
-
-  def printLastStringIfContains(lastCharInChunk: Byte, string: String, wordToFind: String): Unit = {
-    if (lastCharInChunk == '\n' && string.contains(wordToFind))
-      println(string)
-  }
 
   def main(args: Array[String]): Unit = {
 
     val wordToFind = args(0)
-    val filename = args(1)
 
     implicit val system: ActorSystem = ActorSystem("QuickStart")
-    import system.dispatcher
 
-    // a default chunk-size is 8192
-    val source = FileIO.fromPath(Paths.get(filename))
+    val source = StreamConverters.fromInputStream(() => System.in)
 
-    // this is a simple example of reading bytes by fixed-sized frames and waiting for a line separator.
-    // it does not fit well 'cause it has a maximumFrameLength.
-//    val flow = Framing
-//      .delimiter(ByteString(System.lineSeparator()), maximumFrameLength = 512, allowTruncation = true)
-//      .map(_.utf8String)
+    // Splits by '\n'; converts every line from bytes to string; filter strings.
+    val flow = Framing
+      .delimiter(
+        delimiter = ByteString(System.lineSeparator()),
+        maximumFrameLength = Int.MaxValue,
+        allowTruncation = true
+      )
+      .map(_.utf8String)
+      .filter(_.contains(wordToFind))
 
+    val sink = Sink.foreach(println)
 
-    val sink = Sink.fold[String, ByteString]("") {
-
-      case (previousString, inputChunk) =>
-
-        val strings = inputChunk
-          .utf8String
-          .split("\n")
-          .toVector
-
-        // handling a corner case: for instance, we are looking for a 'computer'. There is a possibility of reading a
-        // file in the following chunk-order: '... this is my com' and 'puter\nAnd this is ...'. To print the entire line
-        // we have to get the beginning of a string from the previous chunk and concatenate it with its continuation
-        // in the next chunk.
-        val firstString = previousString + strings.head
-        val lastString = strings.last
-
-        val preparedStringsToFindWord = firstString +: strings.slice(1, strings.length - 1)
-
-        preparedStringsToFindWord.filter(_.contains(wordToFind)).foreach(println)
-
-        // another corner case but for the last string in a chunk. If the string does not end with the '\n', we have to
-        // concatenate it with the first string during the next step of 'fold'.
-        val stringToPassToNextIteration = if (inputChunk.last == '\n') "" else lastString
-        printLastStringIfContains(inputChunk.last, lastString, wordToFind)
-
-        stringToPassToNextIteration
-    }
-
+    // Potentially, can handle an endless input flow in the console.
+    // And this is the reason it does not have a termination point. Only Ctrl+Z to force-stop the Scala application.
     source
-      .runWith(sink)
-      .onComplete(_ => system.terminate())
+      .via(flow)
+      .to(sink)
+      .run()
   }
 }
