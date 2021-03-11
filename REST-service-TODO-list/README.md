@@ -41,5 +41,5 @@ http DELETE localhost:8080/api/tasks/eat
 
 ### GET request example using HTTPIE:
 
-<img src="https://raw.githubusercontent.com/GeorgeII/scala-sandbox/restService/REST-service-TODO-list/pictures/1.png?raw=true" />
+<img src="https://raw.githubusercontent.com/GeorgeII/scala-sandbox/master/REST-service-TODO-list/pictures/1.png?raw=true" />
 
