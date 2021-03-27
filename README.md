@@ -3,6 +3,15 @@
 ### Content of the repo:
 
 
+## Exercises and Competitions
+
+:heavy_check_mark: [Functional Programming Playground](https://github.com/GeorgeII/scala-sandbox/tree/master/functional-programming) - this is where I try to 
+dive into the functional paradigm. Mostly consists of exercises for well-known books like "Scala with Cats", "Functional Programming in Scala" (aka the Red Book).
+
+:heavy_check_mark: [Advent of Code](https://github.com/GeorgeII/scala-sandbox/tree/master/advent-of-code) - a yearly competition. 
+Suits perfect if you want to get to know a new language.
+
+
 ## Concurrency and Multithreading
 
 :heavy_check_mark: [Concurrent Matrix Multiplication](https://github.com/GeorgeII/scala-sandbox/tree/master/concurrent-matrix-multiplication) - the first time I 
@@ -38,21 +47,12 @@ deploy Kafka, Zookeeper, Flink, and a usual Scala app in containers via docker-c
 Get, Post, Delete methods. More details in the link.
 
 
-## Exercises and Competitions
-
-:heavy_check_mark: [Functional Programming Playground](https://github.com/GeorgeII/scala-sandbox/tree/master/functional-programming) - that's where I try to 
-dive into the functional paradigm. Mostly consists of exercises for well-known books like "Scala with Cats", "Functional Programming in Scala" (aka the Red Book).
-
-:heavy_check_mark: [Advent of Code](https://github.com/GeorgeII/scala-sandbox/tree/master/advent-of-code) - a yearly competition. 
-Suits perfect if you want to get to know a new language.
-
-
 ## Other
 
 :heavy_check_mark: [Short Sroty Parser](https://github.com/GeorgeII/scala-sandbox/tree/master/short-story-parser) - my first program written in Scala. 
 It traverses and parses novels on the [Reedsy.com](https://blog.reedsy.com/creative-writing-prompts/contests/) website and saves them into MongoDB.
 
-:heavy_check_mark: [Scala Collections](https://github.com/GeorgeII/scala-sandbox/tree/master/collections-implementation) - this is my implemetation of Scala basic 
+:heavy_check_mark: [Scala Collections](https://github.com/GeorgeII/scala-sandbox/tree/master/collections-implementation) - my implemetation of Scala basic 
 collections and their main methods like 'append', 'prepand', 'insert', etc. Turns out, immutable collections are super non-trivial, thus I wrote only mutable ones.
 
 <br />
