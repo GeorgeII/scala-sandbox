@@ -1,4 +1,4 @@
-# The repo contains some of my programs that I've written to learn Scala and master my skills in it.
+# The repo contains some of my programs that I've written to learn Scala and to master my skills in it.
 
 ### Content of the repo:
 
@@ -31,7 +31,7 @@ directory, gets the color that occurs the most frequently in every picture, and 
 
 ## Streams
 
-:heavy_check_mark: [Grep Utility](https://github.com/GeorgeII/scala-sandbox/tree/master/grep-utility) - a simple couterpart of Linux 'grep' using Akka-Streams. 
+:heavy_check_mark: [Grep Utility](https://github.com/GeorgeII/scala-sandbox/tree/master/grep-utility) - a simple counterpart of Linux 'grep' using Akka-Streams. 
 It is able to process files bigger than your RAM.
 
 :heavy_check_mark: [Sentiment Analysis Spark Streaming](https://github.com/GeorgeII/scala-sandbox/tree/master/sentiment-analysis-spark-streaming) - a 
