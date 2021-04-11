@@ -36,7 +36,7 @@ object Par {
 
   def lazyUnit[A](a: => A): Par[A] = fork(unit(a))
 
-  def run[A](a: Par[A]): A = ???
+  def run[A](s: ExecutorService)(a: Par[A]): Future[A] = a(s)
 
   def asyncF[A,B](f: A => B): A => Par[B] = {
     a: A => lazyUnit(f(a))
@@ -67,11 +67,11 @@ object Par {
   }
 
   // a very naive approach. But we haven't defined flatMap yet. It's hard to write an impl without it.
-  def countWords(l: List[String]): Int = {
-    val parOfLengthsList = parMap(l)(str => str.split(" ").length)
-    val parOfSumLength = map(parOfLengthsList)(par => sum(par.toIndexedSeq))
-    run(run(parOfSumLength))
-  }
+//  def countWords(l: List[String]): Int = {
+//    val parOfLengthsList = parMap(l)(str => str.split(" ").length)
+//    val parOfSumLength = map(parOfLengthsList)(par => sum(par.toIndexedSeq))
+//    run(run(parOfSumLength))
+//  }
 
   // again... flatMap is needed so much...
 //  def map3[A, B, C, D](a: Par[A], b: Par[B], c: Par[C])(f: (A, B, C) => D): Par[D] = {
@@ -86,6 +86,49 @@ object Par {
 ////          map(tup._3)(cc =>
 ////            f(aa, bb, cc)))))
 //  }
+
+  def choiceN[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
+    es => {
+      val ind = run(es)(n).get
+      run(es)(choices(ind))
+    }
+
+  def choice[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+    choiceN(map(cond)(x => if (x) 0 else 1))(List(t, f))
+
+//  def choice[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+//    es =>
+//      if (run(es)(cond).get) t(es)
+//      else f(es)
+
+  def choiceMap[K,V](key: Par[K])(choices: Map[K,Par[V]]): Par[V] =
+    es => {
+      val el = run(es)(key).get
+      run(es)(choices(el))
+    }
+
+  def chooser[A,B](pa: Par[A])(choices: A => Par[B]): Par[B] =
+    es => {
+      val el = run(es)(pa).get
+      run(es)(choices(el))
+    }
+
+  def choiceNByChooser[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
+    chooser(n)(choices.apply)
+
+  def choiceByChooser[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+    chooser(map(cond)(x => if (x) 0 else 1))(List(t, f).apply)
+
+  // Had to look at the answer...
+  def join[A](a: Par[Par[A]]): Par[A] =
+    es => run(es)(run(es)(a).get())
+
+  def flatMap[A,B](pa: Par[A])(choices: A => Par[B]): Par[B] = chooser _
+
+  // flatMap is chooser here.
+  def joinByFlatMap[A](a: Par[Par[A]]): Par[A] =
+    flatMap(a)(identity)
+  
 
 
   def sum(ints: IndexedSeq[Int]): Par[Int] =
@@ -102,8 +145,8 @@ object FunctionalParallelism {
   def main(args: Array[String]): Unit = {
     import Par._
 
-    val paragraphs = List("1 2", "here are 3", "these are 4 words", "5 words 5 5 5")
-    val res = countWords(paragraphs)
-    println(res)
+//    val paragraphs = List("1 2", "here are 3", "these are 4 words", "5 words 5 5 5")
+//    val res = countWords(paragraphs)
+//    println(res)
   }
 }
