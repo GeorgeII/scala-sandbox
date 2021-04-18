@@ -48,8 +48,8 @@ case class Gen[A](sample: State[RNG,A]) {
   def flatMap[B](f: A => Gen[B]): Gen[B] =
     Gen(sample.flatMap(x => f(x).sample))
 
-  def listOfN(size: Gen[Int]): Gen[List[A]] =
-    size.flatMap(x => Gen.listOfN(x, this))
+//  def listOfN(size: Gen[Int]): Gen[List[A]] =
+//    size.flatMap(x => Gen.listOfN(x, this))
 
 }
 
@@ -63,8 +63,8 @@ object Gen {
   def boolean: Gen[Boolean] =
     Gen(State(RNG.boolean))
 
-  def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] =
-    unit(List.fill(n)(g.sample))
+//  def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] =
+//    unit(List.fill(n)(g.sample))
 
   def union[A](g1: Gen[A], g2: Gen[A]): Gen[A] =
     boolean flatMap {
