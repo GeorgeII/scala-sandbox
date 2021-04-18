@@ -1,18 +1,48 @@
 package redBook.chapter8
 
-//import redBook.chapter8.RNG.Simple
-import redBook.chapter8.State.Rand
-
 object Prop {
   type FailedCase = String
   type SuccessCount = Int
+  type TestCases = Int
+
+  sealed trait Result {
+    def isFalsified: Boolean
+  }
+  case object Passed extends Result {
+    def isFalsified = false
+  }
+
+  case class Falsified(failure: FailedCase,
+                       successes: SuccessCount) extends Result {
+    def isFalsified = true
+  }
+
+  case class Prop(run: (TestCases, RNG) => Result) {
+//    def &&(p: Prop): Prop =
+//
+//
+//    def ||(p: Prop): Prop =
+
+  }
+
+  def forAll[A](as: Gen[A])(f: A => Boolean): Prop = Prop {
+    (n, rng) => randomStream(as)(rng).zip(Stream.from(0)).take(n).map {
+      case (a, i) => try {
+        if (f(a)) Passed else Falsified(a.toString, i)
+      } catch { case e: Exception => Falsified(buildMsg(a, e), i) }
+    }.find(_.isFalsified).getOrElse(Passed)
+  }
+
+  def randomStream[A](g: Gen[A])(rng: RNG): Stream[A] =
+    Stream.unfold(rng)(rng => Some(g.sample.run(rng)))
+
+  def buildMsg[A](s: A, e: Exception): String =
+    s"test case: $s\n" +
+      s"generated an exception: ${e.getMessage}\n" +
+      s"stack trace:\n ${e.getStackTrace.mkString("\n")}"
 }
 
-trait Prop {
-  import Prop._
-
-  def check: Either[(FailedCase, SuccessCount), SuccessCount]
-}
+//import Prop._
 
 case class Gen[A](sample: State[RNG,A]) {
   def flatMap[B](f: A => Gen[B]): Gen[B] =
@@ -49,19 +79,11 @@ object Gen {
     }
 
 
-
 }
 
 
 object PropertyBasedTesting {
 
-
-
-//  def listOf[A](a: Gen[A]): Gen[List[A]]
-//
-//  def listOfN[A](n: Int, a: Gen[A]): Gen[List[A]]
-//
-//  def forAll[A](a: Gen[A])(f: A => Boolean): Prop
 
 
   def main(args: Array[String]): Unit = {
