@@ -47,8 +47,8 @@ trait Applicative[F[_]] extends Functor[F] {
   def sequence[A](fas: List[F[A]]): F[List[A]] =
     fas.foldRight(unit(List.empty[A]))((el, acc) => map2(el, acc)(_ :: _))
 
-  def replicateM[A](n: Int, fa: F[A]): F[List[A]] =
-    unit(List.fill(n)(fa))
+//  def replicateM[A](n: Int, fa: F[A]): F[List[A]] =
+//    unit(List.fill(n)(fa))
 
   def product[A,B](fa: F[A], fb: F[B]): F[(A,B)] =
     map2(fa, fb)((a, b) => (a, b))
