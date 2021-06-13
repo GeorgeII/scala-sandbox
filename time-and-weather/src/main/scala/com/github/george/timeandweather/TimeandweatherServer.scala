@@ -25,11 +25,12 @@ object TimeandweatherServer {
       httpApp = (
         TimeandweatherRoutes.helloWorldRoutes[F](helloWorldAlg) <+>
         TimeandweatherRoutes.jokeRoutes[F](jokeAlg)             <+>
-        TimeandweatherRoutes.timeRoutes(timeAlg)
+        TimeandweatherRoutes.timeRoutes(timeAlg)                <+>
+        TimeandweatherRoutes.timeStreamingRoutes(timeAlg)
       ).orNotFound
 
       // With Middlewares in place
-      finalHttpApp = Logger.httpApp(true, true)(httpApp)
+      finalHttpApp = Logger.httpApp(logHeaders = true, logBody = true)(httpApp)
 
       exitCode <- BlazeServerBuilder[F](global)
         .bindHttp(8080, "0.0.0.0")
