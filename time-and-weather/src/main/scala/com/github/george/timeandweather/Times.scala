@@ -2,12 +2,6 @@ package com.github.george.timeandweather
 
 import cats.Applicative
 import cats.implicits._
-import cats.effect.Sync
-import io.circe.{Decoder, Encoder}
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-import io.circe.generic.auto._
-import org.http4s.{EntityDecoder, EntityEncoder}
-import org.http4s.circe.{jsonEncoderOf, jsonOf}
 
 import java.time._
 
@@ -20,22 +14,8 @@ object Times {
   def apply[F[_]](implicit ev: Times[F]): Times[F] = ev
 
   final case class CurrentTime(city: String, time: LocalDateTime)
-  final case class CurrentTimeError(exception: String) extends RuntimeException
+  final case class CurrentTimeError(error: String) extends RuntimeException
 
-  object Codecs {
-//    implicit val decoderCurrentTime: Decoder[CurrentTime] = deriveDecoder[CurrentTime]
-//    implicit def entityDecoderCurrentTime[F[_]: Sync]: EntityDecoder[F, CurrentTime] = jsonOf
-//
-//    implicit val encoderCurrentTime: Encoder[CurrentTime] = deriveEncoder[CurrentTime]
-//    implicit def entityEncoderCurrentTime[F[_]: Applicative]: EntityEncoder[F, CurrentTime] = jsonEncoderOf
-
-
-//    implicit val decoderCurrentTimeError: Decoder[CurrentTimeError] = deriveDecoder[CurrentTimeError]
-//    implicit def entityDecoderCurrentTimeError[F[_]: Sync]: EntityDecoder[F, CurrentTimeError] = jsonOf
-//
-//    implicit val encoderCurrentTimeError: Encoder[CurrentTimeError] = deriveEncoder[CurrentTimeError]
-//    implicit def entityEncoderCurrentTimeError[F[_]: Applicative]: EntityEncoder[F, CurrentTimeError] = jsonEncoderOf
-  }
 
   def impl[F[_]: Applicative]: Times[F] = new Times[F] {
     override def get(city: String): F[Either[CurrentTimeError, CurrentTime]] = {
