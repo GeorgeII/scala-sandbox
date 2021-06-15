@@ -1,6 +1,6 @@
 package com.github.george.timeandweather
 
-import cats.effect.{Sync, Timer}
+import cats.effect.{IO, Sync, Timer}
 import cats.implicits._
 import fs2.{Pure, Stream}
 import io.circe.Json
@@ -30,6 +30,7 @@ object TimeandweatherRoutes {
   def helloWorldRoutes[F[_]: Sync](H: HelloWorld[F]): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F]{}
     import dsl._
+
     HttpRoutes.of[F] {
       case GET -> Root / "hello" / name =>
         for {
@@ -39,11 +40,11 @@ object TimeandweatherRoutes {
     }
   }
 
-  def timeRoutes[F[_]: Sync](times: Times[F]): HttpRoutes[F] = {
-    val dsl = new Http4sDsl[F]{}
+  def timeRoutes[F[_]: Sync](times: Times[F]): HttpRoutes[IO] = {
+    val dsl = new Http4sDsl[IO]{}
     import dsl._
 
-    HttpRoutes.of[F] {
+    HttpRoutes.of[IO] {
       case GET -> Root / "time" / city =>
         for {
           timeOrErr <- times.get(city.toUpperCase)
@@ -62,15 +63,13 @@ object TimeandweatherRoutes {
     HttpRoutes.of[F] {
       case GET -> Root / "streaming" / city =>
 
-        val throttling = Stream.awakeEvery[F](1.second)
+        import Codecs.Time._
+        import scala.concurrent.ExecutionContext.Implicits.global
 
-        for {
-          timeOrErr <- times.get(city.toUpperCase)
-          resp <- timeOrErr match {
-            case Right(time) => Ok(throttling.map(_ => time.asJson))
-            case Left(error) => BadRequest(throttling.map(_ => error.asJson))
-          }
-        } yield resp
+        val y = Stream.awakeEvery[IO](1.second)
+        val x = y.evalMap(_ => times.get(city.toUpperCase))
+
+        Ok(x)
     }
   }
 }

@@ -1,12 +1,13 @@
 package com.github.george.timeandweather
 
 import cats.Applicative
+import cats.effect.IO
 import cats.implicits._
 
 import java.time._
 
 trait Times[F[_]] {
-  def get(city: String): F[Either[Times.CurrentTimeError, Times.CurrentTime]]
+  def get(city: String): IO[Either[Times.CurrentTimeError, Times.CurrentTime]]
 }
 
 object Times {
@@ -18,8 +19,8 @@ object Times {
 
 
   def impl[F[_]: Applicative]: Times[F] = new Times[F] {
-    override def get(city: String): F[Either[CurrentTimeError, CurrentTime]] = {
-      getLocalDateTime(city).pure[F]
+    override def get(city: String): IO[Either[CurrentTimeError, CurrentTime]] = {
+      getLocalDateTime(city).pure[IO]
     }
   }
 
