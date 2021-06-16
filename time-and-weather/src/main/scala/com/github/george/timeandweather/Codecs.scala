@@ -1,6 +1,6 @@
 package com.github.george.timeandweather
 
-import cats.effect.{IO, Timer}
+import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
 import com.github.george.timeandweather.Times.{CurrentTime, CurrentTimeError}
 import fs2.Stream
 import io.circe.Encoder
@@ -18,15 +18,16 @@ object Codecs {
 
     val executionContext: ExecutionContext = implicitly[ExecutionContext]
     implicit val timerEncoder: Timer[IO] = IO.timer(executionContext)
-    
-    implicit val CirceEncoder: Encoder[CurrentTime] =
-    deriveEncoder
+    implicit val cs: ContextShift[IO] = IO.contextShift(executionContext)
+
+    implicit val circeEncoder: Encoder[CurrentTime] =
+      deriveEncoder
 
     implicit val timeOrErrorCirceEncoder: Encoder[Either[CurrentTimeError, CurrentTime]] =
-    Encoder.encodeEither[CurrentTimeError, CurrentTime](leftKey = "error", rightKey = "time")
+      Encoder.encodeEither[CurrentTimeError, CurrentTime](leftKey = "error", rightKey = "currentTime")
 
     implicit val timeOrErrorEntityEncoder: EntityEncoder[IO, Stream[IO, Either[CurrentTimeError, CurrentTime]]] =
-    streamJsonArrayEncoderOf
+      streamJsonArrayEncoderOf
 
   }
 
