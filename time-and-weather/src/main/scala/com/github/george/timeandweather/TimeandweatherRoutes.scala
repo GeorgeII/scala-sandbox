@@ -1,12 +1,10 @@
 package com.github.george.timeandweather
 
-import cats.effect.{IO, Sync, Timer}
-import cats.implicits._
-import fs2.{Pure, Stream}
-import io.circe.Json
+import cats.effect.IO
+import fs2.Stream
 import io.circe.generic.auto._
 import io.circe.syntax._
-import org.http4s.{HttpRoutes, Response}
+import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec.circeEntityEncoder
 import org.http4s.circe.jsonEncoder
 import org.http4s.dsl.Http4sDsl
@@ -15,10 +13,10 @@ import scala.concurrent.duration.DurationInt
 
 object TimeandweatherRoutes {
 
-  def jokeRoutes[F[_]: Sync](J: Jokes[F]): HttpRoutes[F] = {
-    val dsl = new Http4sDsl[F]{}
+  def jokeRoutes(J: Jokes[IO]): HttpRoutes[IO] = {
+    val dsl = new Http4sDsl[IO]{}
     import dsl._
-    HttpRoutes.of[F] {
+    HttpRoutes.of[IO] {
       case GET -> Root / "joke" =>
         for {
           joke <- J.get
@@ -27,11 +25,11 @@ object TimeandweatherRoutes {
     }
   }
 
-  def helloWorldRoutes[F[_]: Sync](H: HelloWorld[F]): HttpRoutes[F] = {
-    val dsl = new Http4sDsl[F]{}
+  def helloWorldRoutes(H: HelloWorld[IO]): HttpRoutes[IO] = {
+    val dsl = new Http4sDsl[IO]{}
     import dsl._
 
-    HttpRoutes.of[F] {
+    HttpRoutes.of[IO] {
       case GET -> Root / "hello" / name =>
         for {
           greeting <- H.hello(HelloWorld.Name(name))
@@ -40,7 +38,7 @@ object TimeandweatherRoutes {
     }
   }
 
-  def timeRoutes[F[_]: Sync](times: Times[F]): HttpRoutes[IO] = {
+  def timeRoutes(times: Times[IO]): HttpRoutes[IO] = {
     val dsl = new Http4sDsl[IO]{}
     import dsl._
 
@@ -56,20 +54,19 @@ object TimeandweatherRoutes {
     }
   }
 
-  def timeStreamingRoutes[F[_]: Sync : Timer](times: Times[F]): HttpRoutes[F] = {
-    val dsl = new Http4sDsl[F]{}
+  def timeStreamingRoutes(times: Times[IO]): HttpRoutes[IO] = {
+    val dsl = new Http4sDsl[IO]{}
     import dsl._
 
-    HttpRoutes.of[F] {
+    HttpRoutes.of[IO] {
       case GET -> Root / "streaming" / city =>
 
         import Codecs.Time._
-        import scala.concurrent.ExecutionContext.Implicits.global
 
-        val y = Stream.awakeEvery[IO](1.second)
-        val x = y.evalMap(_ => times.get(city.toUpperCase))
+        val throttling    = Stream.awakeEvery[IO](1.second)
+        val payloadStream = throttling.evalMap(_ => times.get(city.toUpperCase))
 
-        Ok(x)
+        Ok(payloadStream)
     }
   }
 }
