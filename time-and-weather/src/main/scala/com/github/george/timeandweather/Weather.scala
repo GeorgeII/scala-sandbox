@@ -43,6 +43,7 @@ object Weather {
 
   // making an http request here. So, IO encompasses it because this is a side effect.
   private def getByCity(city: String): EitherT[IO, CurrentWeatherError, CurrentWeather] = {
+    // TODO: read apiKey from the config
     val apiKey = ""
     val url = s"api.openweathermap.org/data/2.5/weather?q=$city&appid=$apiKey"
 
@@ -50,6 +51,7 @@ object Weather {
       client.expect[String](url)
     }
 
+    // TODO: figure out where to run unsafeRunSync as it's better to be deferred until the end.
     request.unsafeRunSync()
   }
 
