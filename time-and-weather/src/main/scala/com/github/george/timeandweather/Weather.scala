@@ -1,9 +1,10 @@
 package com.github.george.timeandweather
 
+import cats.data.EitherT
 import cats.effect.IO
 
 trait Weather {
-  def get(city: String): IO[Either[Weather.CurrentWeather, Weather.CurrentWeatherError]]
+  def get(city: String): IO[Either[Weather.CurrentWeatherError, Weather.CurrentWeather]]
 }
 
 object Weather {
@@ -16,26 +17,27 @@ object Weather {
   private val supportedCities = List("LONDON", "NEW-YORK", "MOSCOW", "LOS-ANGELES", "SYDNEY")
 
   def impl: Weather = new Weather {
-    override def get(city: String): IO[Either[CurrentWeather, CurrentWeatherError]] = {
+    override def get(city: String): EitherT[IO, CurrentWeatherError, CurrentWeather] = {
       getLocalWeather(city)
     }
   }
 
-  private def getLocalWeather(city: String): IO[Either[CurrentWeather, CurrentWeatherError]] = {
-    val resultCity =
+  private def getLocalWeather(city: String): EitherT[IO, CurrentWeatherError, CurrentWeather] = {
+    val resultCity: EitherT[IO, CurrentWeatherError, String] =
       if (supportedCities.contains(city.toUpperCase))
-        Left(CurrentWeatherError(s"$city city is not supported yet."))
+        EitherT.left(IO(CurrentWeatherError(s"$city city is not supported yet.")))
       else
-        Right(city.toUpperCase)
+        EitherT.right(IO(city.toUpperCase))
 
-    // making an http request here. So, IO encompasses it because this is a side effect.
-    IO {
-      resultCity.map { city =>
-        // TODO: an http request should be made here.
-        // It must be checked whether it was successful and it it wasn't - return Left with a
-        // convenient error message.
-      }
-    }
+    for {
+      eitherCity <- resultCity
+      rightCity <- getByCity(eitherCity)
+    } yield rightCity
+  }
+
+  // making an http request here. So, IO encompasses it because this is a side effect.
+  private def getByCity(city: String): EitherT[IO, CurrentWeatherError, CurrentWeather] = {
+    
   }
 
 }
