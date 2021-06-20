@@ -2,6 +2,12 @@ package com.github.george.timeandweather
 
 import cats.data.EitherT
 import cats.effect.IO
+import org.http4s.client.blaze._
+import org.http4s.client._
+import Codecs.Time._
+
+import scala.concurrent.ExecutionContext.global
+
 
 trait Weather {
   def get(city: String): IO[Either[Weather.CurrentWeatherError, Weather.CurrentWeather]]
@@ -25,19 +31,26 @@ object Weather {
   private def getLocalWeather(city: String): EitherT[IO, CurrentWeatherError, CurrentWeather] = {
     val resultCity: EitherT[IO, CurrentWeatherError, String] =
       if (supportedCities.contains(city.toUpperCase))
-        EitherT.left(IO(CurrentWeatherError(s"$city city is not supported yet.")))
-      else
         EitherT.right(IO(city.toUpperCase))
+      else
+        EitherT.left(IO(CurrentWeatherError(s"$city city is not supported yet.")))
 
     for {
-      eitherCity <- resultCity
-      rightCity <- getByCity(eitherCity)
-    } yield rightCity
+      rightCity <- resultCity
+      weather <- getByCity(rightCity)
+    } yield weather
   }
 
   // making an http request here. So, IO encompasses it because this is a side effect.
   private def getByCity(city: String): EitherT[IO, CurrentWeatherError, CurrentWeather] = {
-    
+    val apiKey = ""
+    val url = s"api.openweathermap.org/data/2.5/weather?q=$city&appid=$apiKey"
+
+    val request = BlazeClientBuilder[IO](global).resource.use { client =>
+      client.expect[String](url)
+    }
+
+    request.unsafeRunSync()
   }
 
 }
