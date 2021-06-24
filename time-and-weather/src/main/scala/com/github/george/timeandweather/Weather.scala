@@ -5,12 +5,15 @@ import cats.effect.IO
 import org.http4s.client.blaze._
 import org.http4s.client._
 import Codecs.Time._
+import pureconfig._
+import pureconfig.error.ConfigReaderFailures
+import pureconfig.generic.auto._
 
 import scala.concurrent.ExecutionContext.global
 
 
 trait Weather {
-  def get(city: String): IO[Either[Weather.CurrentWeatherError, Weather.CurrentWeather]]
+  def get(city: String): EitherT[IO, Weather.CurrentWeatherError, Weather.CurrentWeather]
 }
 
 object Weather {
@@ -29,26 +32,35 @@ object Weather {
   }
 
   private def getLocalWeather(city: String): EitherT[IO, CurrentWeatherError, CurrentWeather] = {
-    val resultCity: EitherT[IO, CurrentWeatherError, String] =
+    val resultCity: Either[CurrentWeatherError, String] =
       if (supportedCities.contains(city.toUpperCase))
-        EitherT.right(IO(city.toUpperCase))
+        Right(city.toUpperCase)
       else
-        EitherT.left(IO(CurrentWeatherError(s"$city city is not supported yet.")))
+        Left(CurrentWeatherError(s"$city city is not supported yet."))
 
     for {
-      rightCity <- resultCity
-      weather <- getByCity(rightCity)
+      rightCity <- EitherT.fromEither[IO](resultCity)
+      weather   <- getByCity(rightCity)
     } yield weather
   }
 
   // making an http request here. So, IO encompasses it because this is a side effect.
   private def getByCity(city: String): EitherT[IO, CurrentWeatherError, CurrentWeather] = {
-    // TODO: read apiKey from the config
-    val apiKey = ""
-    val url = s"api.openweathermap.org/data/2.5/weather?q=$city&appid=$apiKey"
+
+    case class OpenWeatherMap(apiKey: String)
+    val conf = EitherT.fromEither[IO](ConfigSource.default.load[OpenWeatherMap])
+
+    val url: EitherT[IO, ConfigReaderFailures, String] =
+      for {
+        openWeatherMap <- conf
+      } yield s"api.openweathermap.org/data/2.5/weather?q=$city&appid=${openWeatherMap.apiKey}"
 
     val request = BlazeClientBuilder[IO](global).resource.use { client =>
-      client.expect[String](url)
+      val x = url.map { u =>
+        client.expect[String](u)
+      }
+
+
     }
 
     // TODO: figure out where to run unsafeRunSync as it's better to be deferred until the end.
