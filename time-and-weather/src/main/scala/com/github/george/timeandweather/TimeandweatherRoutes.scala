@@ -38,6 +38,16 @@ object TimeandweatherRoutes {
     }
   }
 
+  def weatherRoutes(weather: Times[IO]): HttpRoutes[IO] = {
+    val dsl = new Http4sDsl[IO] {}
+    import dsl._
+
+    HttpRoutes.of[IO] {
+      case GET -> Root / "weather" / city =>
+
+    }
+  }
+
   def timeRoutes(times: Times[IO]): HttpRoutes[IO] = {
     val dsl = new Http4sDsl[IO]{}
     import dsl._
