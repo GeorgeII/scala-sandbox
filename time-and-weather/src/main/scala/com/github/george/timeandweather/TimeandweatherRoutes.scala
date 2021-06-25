@@ -38,13 +38,19 @@ object TimeandweatherRoutes {
     }
   }
 
-  def weatherRoutes(weather: Times[IO]): HttpRoutes[IO] = {
+  def weatherRoutes(weather: Weather): HttpRoutes[IO] = {
     val dsl = new Http4sDsl[IO] {}
     import dsl._
 
     HttpRoutes.of[IO] {
       case GET -> Root / "weather" / city =>
+        import Codecs.Weather._
 
+        val res = weather.get(city)
+
+        val x = res.getOrElse(Weather.CurrentWeather("errorCity", 0.0, 0.0))
+
+        Ok(x)
     }
   }
 
