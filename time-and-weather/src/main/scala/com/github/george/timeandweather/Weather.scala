@@ -56,15 +56,14 @@ object Weather {
       } yield s"api.openweathermap.org/data/2.5/weather?q=$city&appid=${openWeatherMap.apiKey}"
 
     val request = BlazeClientBuilder[IO](global).resource.use { client =>
-      val x = url.map { u =>
-        client.expect[String](u)
-      }
+      val response = url.semiflatMap(urlString => client.expect[String](urlString))
 
-
+      response.value
     }
 
-    // TODO: figure out where to run unsafeRunSync as it's better to be deferred until the end.
-    request.unsafeRunSync()
-  }
+    // TODO: right now there' a type mismatch. Need to handle client request above and transform it
+    // to the case classes.
 
+    EitherT(request)
+  }
 }
