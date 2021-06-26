@@ -48,9 +48,9 @@ object TimeandweatherRoutes {
 
         val res = weather.get(city)
 
-        val x = res.getOrElse(Weather.CurrentWeather("errorCity", 0.0, 0.0))
+        val weatherOrErr = res.value.unsafeRunSync()
 
-        Ok(x)
+        Ok(weatherOrErr)
     }
   }
 
