@@ -61,9 +61,13 @@ object Weather {
       response.value
     }
 
-    // TODO: right now there' a type mismatch. Need to handle client request above and transform it
-    // to the case classes.
+    val response =
+      EitherT(request)
+        .bimap(
+          configReaderFailure => CurrentWeatherError(configReaderFailure.toString),
+          weather             => CurrentWeather(weather, 1000, 1000)
+        )
 
-    EitherT(request)
+    response
   }
 }
