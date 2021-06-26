@@ -17,8 +17,10 @@ object TimeandweatherServer {
     for {
       client <- BlazeClientBuilder[IO](global).stream
       helloWorldAlg = HelloWorld.impl[IO]
-      jokeAlg = Jokes.impl[IO](client)
-      timeAlg = Times.impl[IO]
+      jokeAlg       = Jokes.impl[IO](client)
+      timeAlg       = Times.impl[IO]
+      weatherAlg    = Weather.impl
+
 
       // Combine Service Routes into an HttpApp.
       // Can also be done via a Router if you
@@ -28,7 +30,8 @@ object TimeandweatherServer {
         TimeandweatherRoutes.helloWorldRoutes(helloWorldAlg) <+>
         TimeandweatherRoutes.jokeRoutes(jokeAlg)             <+>
         TimeandweatherRoutes.timeRoutes(timeAlg)             <+>
-        TimeandweatherRoutes.timeStreamingRoutes(timeAlg)
+        TimeandweatherRoutes.timeStreamingRoutes(timeAlg)    <+>
+        TimeandweatherRoutes.weatherRoutes(weatherAlg)
       ).orNotFound
 
       // With Middlewares in place
