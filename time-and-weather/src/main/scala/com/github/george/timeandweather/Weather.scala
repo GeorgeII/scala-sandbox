@@ -47,13 +47,15 @@ object Weather {
   // making an http request here. So, IO encompasses it because this is a side effect.
   private def getByCity(city: String): EitherT[IO, CurrentWeatherError, CurrentWeather] = {
 
-    case class OpenWeatherMap(apiKey: String)
+    case class OpenWeatherMap(openWeatherMap: OpenWeatherMapDetails)
+    case class OpenWeatherMapDetails(apiKey: String)
+
     val conf = EitherT.fromEither[IO](ConfigSource.default.load[OpenWeatherMap])
 
     val url: EitherT[IO, ConfigReaderFailures, String] =
       for {
         openWeatherMap <- conf
-      } yield s"api.openweathermap.org/data/2.5/weather?q=$city&appid=${openWeatherMap.apiKey}"
+      } yield s"api.openweathermap.org/data/2.5/weather?q=$city&appid=${openWeatherMap.openWeatherMap.apiKey}"
 
     val request = BlazeClientBuilder[IO](global).resource.use { client =>
       val response = url.semiflatMap(urlString => client.expect[String](urlString))
