@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext.global
 
 
 trait Weather {
-  def get(city: String): EitherT[IO, Weather.CurrentWeatherError, Weather.CurrentWeather]
+  def get(city: String): Either[Weather.CurrentWeatherError, Weather.CurrentWeather]
 }
 
 object Weather {
@@ -28,8 +28,10 @@ object Weather {
   private val supportedCities = List("LONDON", "NEW-YORK", "MOSCOW", "LOS-ANGELES", "SYDNEY")
 
   def impl: Weather = new Weather {
-    override def get(city: String): EitherT[IO, CurrentWeatherError, CurrentWeather] = {
-      getLocalWeather(city)
+    override def get(city: String): Either[CurrentWeatherError, CurrentWeather] = {
+      val weather = getLocalWeather(city)
+
+      weather.value.unsafeRunSync()
     }
   }
 

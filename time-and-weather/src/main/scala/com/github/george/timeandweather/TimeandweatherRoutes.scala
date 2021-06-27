@@ -46,11 +46,9 @@ object TimeandweatherRoutes {
       case GET -> Root / "weather" / city =>
         import Codecs.Weather._
 
-        val res = weather.get(city)
+        val response = weather.get(city)
 
-        val weatherOrErr = res.value.unsafeRunSync()
-
-        Ok(weatherOrErr)
+        Ok(response)
     }
   }
 
