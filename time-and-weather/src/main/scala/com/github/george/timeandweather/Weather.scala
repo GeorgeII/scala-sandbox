@@ -5,7 +5,9 @@ import cats.effect.IO
 import org.http4s.client.blaze._
 import org.http4s.client._
 import Codecs.Time._
+import io.circe.Json
 import org.http4s.Uri
+import org.http4s.circe.jsonDecoder
 import org.http4s.implicits.http4sLiteralsSyntax
 import pureconfig._
 import pureconfig.error.ConfigReaderFailures
@@ -22,7 +24,7 @@ object Weather {
 
   def apply(implicit ev: Weather): Weather = ev
 
-  final case class CurrentWeather(details: String)
+  final case class CurrentWeather(details: Json)
   final case class CurrentWeatherError(error: String)
 
   private val supportedCities = List("LONDON", "NEW-YORK", "MOSCOW", "LOS-ANGELES", "SYDNEY")
@@ -70,7 +72,7 @@ object Weather {
       }
 
     val request = BlazeClientBuilder[IO](global).resource.use { client =>
-      val response = url.semiflatMap( urlString => client.expect[String](urlString))
+      val response = url.semiflatMap( urlString => client.expect[Json](urlString))
 
       response.value
     }

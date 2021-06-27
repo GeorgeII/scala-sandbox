@@ -46,9 +46,7 @@ object TimeandweatherRoutes {
       case GET -> Root / "weather" / city =>
         import Codecs.Weather._
 
-        val response = weather.get(city)
-
-        Ok(response)
+        Ok(weather.get(city))
     }
   }
 
