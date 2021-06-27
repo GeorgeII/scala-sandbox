@@ -33,7 +33,7 @@ object Codecs {
 
   object Weather {
     implicit val currentWeatherEncoder: Encoder[CurrentWeather] = new Encoder[CurrentWeather] {
-      override def apply(a: CurrentWeather): Json = Json.fromString(a.details)
+      override def apply(a: CurrentWeather): Json = a.details
     }
 
     implicit val weatherErrorEncoder: Encoder[CurrentWeatherError] = new Encoder[CurrentWeatherError] {
