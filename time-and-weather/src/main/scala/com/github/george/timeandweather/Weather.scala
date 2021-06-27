@@ -5,6 +5,8 @@ import cats.effect.IO
 import org.http4s.client.blaze._
 import org.http4s.client._
 import Codecs.Time._
+import org.http4s.Uri
+import org.http4s.implicits.http4sLiteralsSyntax
 import pureconfig._
 import pureconfig.error.ConfigReaderFailures
 import pureconfig.generic.auto._
@@ -20,7 +22,7 @@ object Weather {
 
   def apply(implicit ev: Weather): Weather = ev
 
-  final case class CurrentWeather(city: String, temperature: Double, windSpeed: Double)
+  final case class CurrentWeather(details: String)
   final case class CurrentWeatherError(error: String)
 
   private val supportedCities = List("LONDON", "NEW-YORK", "MOSCOW", "LOS-ANGELES", "SYDNEY")
@@ -52,13 +54,21 @@ object Weather {
 
     val conf = EitherT.fromEither[IO](ConfigSource.default.load[OpenWeatherMap])
 
-    val url: EitherT[IO, ConfigReaderFailures, String] =
+    val url: EitherT[IO, ConfigReaderFailures, Uri] =
       for {
         openWeatherMap <- conf
-      } yield s"api.openweathermap.org/data/2.5/weather?q=$city&appid=${openWeatherMap.openWeatherMap.apiKey}"
+      } yield {
+        val baseUrl  = uri"https://api.openweathermap.org/data/2.5/weather"
+        val wholeUrl =
+          baseUrl
+            .withQueryParam("q", city)
+            .withQueryParam("appid", openWeatherMap.openWeatherMap.apiKey)
+
+        wholeUrl
+      }
 
     val request = BlazeClientBuilder[IO](global).resource.use { client =>
-      val response = url.semiflatMap(urlString => client.expect[String](urlString))
+      val response = url.semiflatMap( urlString => client.expect[String](urlString))
 
       response.value
     }
@@ -67,7 +77,7 @@ object Weather {
       EitherT(request)
         .bimap(
           configReaderFailure => CurrentWeatherError(configReaderFailure.toString),
-          weather             => CurrentWeather(weather, 1000, 1000)
+          weatherDetails      => CurrentWeather(weatherDetails)
         )
 
     response
