@@ -38,9 +38,11 @@ object Weather {
   }
 
   private def getLocalWeather(city: String): EitherT[IO, CurrentWeatherError, CurrentWeather] = {
+    val cityUnifiedFormat = city.toUpperCase.replace("-", " ")
+
     val resultCity: Either[CurrentWeatherError, String] =
       if (supportedCities.contains(city.toUpperCase))
-        Right(city.toUpperCase)
+        Right(cityUnifiedFormat)
       else
         Left(CurrentWeatherError(s"$city city is not supported yet."))
 
