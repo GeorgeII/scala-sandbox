@@ -93,7 +93,7 @@ object StronglyTypedFunctions {
     println(greaterInvalidRes)
 
 
-    
+
     case class MyType(a: NonEmptyString, b: GTFive)
     def validate(a: String, b: Int): ValidatedNel[String, MyType] =
       (
