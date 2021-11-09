@@ -3,7 +3,7 @@ package shoppingCart.model
 import io.estatico.newtype.macros.newtype
 import squants.market.Money
 
-trait ShoppingCard[F[_]] {
+trait ShoppingCart[F[_]] {
   def add(
       userId: UserId,
       itemId: ItemId,
